@@ -2,9 +2,34 @@ import Image from 'next/image'
 
 const teams = [
   {
-    img: '/home/team_banner.svg',
-    name: 'lll',
-    introduction: '1231231'
+    img: '/team/jyy.png',
+    name: 'Yiying Jiang',
+    introduction: 'Researcher | Master of software engineering from University of Science and Technology of China',
+    href: 'https://academy.kunyaokeji.com/team'
+  },
+  {
+    img: '/team/yyb.png',
+    name: 'Yunbo Yang',
+    introduction:
+      'Researcher | Current Ph.D Candidate in East China Normal UniversitySoftware Engineering, Cryptography and Network Security',
+    href: 'https://academy.kunyaokeji.com/team'
+  },
+  {
+    img: '/team/yyh.png',
+    name: 'Yuhui Yan',
+    introduction:
+      'Backend Developer | 3 years+ blockchain development, involved in the development of Ethereum, Filecoin, Aleo. Languages: Rust, Golang, Python'
+  },
+  {
+    img: '/team/lqs.png',
+    name: 'Qingshan Li',
+    introduction:
+      'Frontend Developer | 4-years experience in frontend development including 2 years of experience for Web3 projects. Language: Java Script, Rust'
+  },
+  {
+    img: '/team/hl.png',
+    name: 'Lei He',
+    introduction: 'UI Designer | 7 years experience in UX design and over 3 years focused on designing Web3 products.'
   }
 ]
 
@@ -31,13 +56,26 @@ export default function Team() {
       </section>
 
       <section className='container py-[149px]'>
-        {teams.map((item, index) => (
-          <div key={index}>
-            <Image className='rounded-[6px]' width={453} height={280} src={item.img} alt={item.name} />
-            <div className='pb-5 pt-[30px] text-xl leading-6'>{item.name}</div>
-            <div className='leading-[19px]'>{item.introduction}</div>
-          </div>
-        ))}
+        <div className='grid grid-cols-2 gap-x-[45px] gap-y-[35px]'>
+          {teams.map((item, index) => (
+            <a
+              key={index}
+              data-href={!!item?.href}
+              className='group flex space-x-5 data-[href=false]:cursor-default '
+              href={item.href ? item.href : 'javascript:void(0)'}
+              target={item.href ? '_black' : '_self'}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className='h-[120px] w-[120px]' src={item.img} alt={item.name} />
+              <div className='flex flex-col'>
+                <div className={'mb-3 text-2xl font-bold leading-6 ' + (item.href ? 'group-hover:underline' : '')}>
+                  {item.name}
+                </div>
+                <div className='text-lg leading-[30px]'>{item.introduction}</div>
+              </div>
+            </a>
+          ))}
+        </div>
       </section>
     </div>
   )

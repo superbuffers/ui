@@ -1,22 +1,23 @@
 import Image from 'next/image'
-import { SEO } from '@/components/SEO'
 
 export default function Home() {
   return (
     <>
-      <SEO />
       <section className='bg-[url("/home/banner_bg.webp"),_url("/home/banner_bg.png")] bg-cover bg-center bg-no-repeat py-[264px] font-bold xl:bg-contain'>
         <div className='container grid grid-cols-14'>
           <div className='col-span-8'>
             <h1 className='text-[120px] leading-[144px]'>SuperBuffers</h1>
             <p className='mb-[60px] mt-[52px] text-2xl leading-10'>
-              Our mission is to build a trustworthy middleware to enable the fast execution of Internet based apps in
-              Web3.
+              How to speed up the processing time of blockchain applications? We show you the solutions!
             </p>
-            <button className='flex rounded-[6px] bg-gradient-to-br from-[#382AD2] to-[#4274EE] px-[30px] py-5 text-white shadow-[0_2px_8px_0_rgba(64,102,232,0.5)] transition-all  duration-300 hover:shadow-[0_3px_9px_0_rgba(64,102,232)]'>
+            <a
+              className='inline-flex items-center rounded-[6px] bg-gradient-to-br from-[#382AD2] to-[#4274EE] px-[30px] py-5 text-white shadow-[0_2px_8px_0_rgba(64,102,232,0.5)] transition-all  duration-300 hover:shadow-[0_3px_9px_0_rgba(64,102,232)]'
+              href='https://github.com/superbuffers'
+              target='_black'
+            >
               <Image className='mr-[10px]' width={24} height={24} src='/home/github.svg' alt='github' />
-              Github
-            </button>
+              <span>Github</span>
+            </a>
           </div>
           <div className='relative col-start-13'>
             <picture className='absolute left-0 h-[703px] w-[700px] -translate-x-1/2 -translate-y-1/4'>
@@ -43,20 +44,27 @@ export default function Home() {
               </div>
             </div>
             <div>
-              <div className='text-[38px] font-bold leading-[60px]'>Transparent and verifiable sequencer</div>
-              <div className='mt-5 leading-[38px]'>XXXXXXXXXXXXXXXX</div>
+              <div className='text-[38px] font-bold leading-[60px]'>Real time application service</div>
+              <div className='mt-5 leading-[38px]'>
+                Experience lightning-fast response times for any Web3 application with Superbuffers, eliminating
+                concerns about high latency in distributed systems. Our cutting-edge technology ensures seamless
+                real-time performance for your applications.
+              </div>
             </div>
           </div>
-
           <div className='flex'>
             <div className='text-right'>
-              <div className='text-[38px] font-bold leading-[60px]'>Fast and secure aggregator</div>
-              <div className='mt-5 leading-[38px]'>XXXXXXXXXXXXXXXX</div>
+              <div className='text-[38px] font-bold leading-[60px]'>Privacy-preserving verifiable sequencer</div>
+              <div className='mt-5 leading-[38px]'>
+                Inspired by Web2 sequencers, Superbuffers introduces a Web3-based sequencer offering unparalleled
+                privacy and trustworthiness. Our state-of-the-art sequencer ensures data integrity and protection,
+                addressing the challenges faced by traditional Web2 solutions.
+              </div>
             </div>
             <div className='ml-[150px] flex items-center'>
               <div>
                 <div className='mb-[30px] flex h-[117px] w-[117px] items-center justify-center rounded-[10px] shadow-[0_4px_20px_0_rgba(188,188,188,0.5)]'>
-                  <Image width={58} height={58} src={'/home/icons/2-1.svg'} alt='' />
+                  <Image width={48} height={48} src={'/home/icons/2-1.svg'} alt='' />
                 </div>
 
                 <div className='flex h-[117px] w-[117px] items-center justify-center rounded-[10px] shadow-[0_4px_20px_0_rgba(188,188,188,0.5)]'>
@@ -85,10 +93,12 @@ export default function Home() {
               </div>
             </div>
             <div>
-              <div className='text-[38px] font-bold leading-[60px]'>
-                Friendly UI to integrate Internet users and layer 2
+              <div className='text-[38px] font-bold leading-[60px]'>0-persistence</div>
+              <div className='mt-5 leading-[38px]'>
+                {
+                  "SuperBuffers' innovative zero-persistence storage eliminates storage pressure, showcasing our platform's exceptional portability. This groundbreaking feature paves the way for limitless expansion and diverse applications, opening up a world of possibilities for SuperBuffers."
+                }
               </div>
-              <div className='mt-5 leading-[38px]'>XXXXXXXXXXXXXXXX</div>
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { LINKS } from './Navbar'
 
 const Footer = () => {
   return (
@@ -18,11 +19,12 @@ const Footer = () => {
             Our mission is to build a trustworthy middleware to enable the fast execution of Internet based apps in
             Web3.
           </p>
-          <div className='col-span-4 col-start-11 grid grid-cols-2 gap-x-[50px] gap-y-[30px]'>
-            <Link href='/'>Introduction</Link>
-            <Link href='/'>Data Feed</Link>
-            <Link href='/'>On-Chain Game</Link>
-            <Link href='/team'>Team</Link>
+          <div className='col-span-4 col-start-11 flex items-end justify-end space-x-[30px]'>
+            {LINKS.map((item, index) => (
+              <Link href={item.href} key={index}>
+                {item.title}
+              </Link>
+            ))}
           </div>
         </div>
       </div>

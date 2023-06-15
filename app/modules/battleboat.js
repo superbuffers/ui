@@ -1,3 +1,6 @@
+import wsHandlerHub from './wsHandlerHub'
+import Decimal from 'decimal.js'
+
 function startGame() {
   // Global Constants
   const DEBUG_MODE = false
@@ -15,6 +18,7 @@ function startGame() {
     CSS_TYPE_MISS: 'miss',
     CSS_TYPE_HIT: 'hit',
     CSS_TYPE_SUNK: 'sunk',
+    CSS_TYPE_WAIT: 'wait',
 
     // Grid code:
     TYPE_EMPTY: 0, // 0 = water (empty)
@@ -22,6 +26,7 @@ function startGame() {
     TYPE_MISS: 2, // 2 = water with a cannonball in it (missed shot)
     TYPE_HIT: 3, // 3 = damaged ship (hit shot)
     TYPE_SUNK: 4, // 4 = sunk ship
+    TYPE_WAIT: 5, // 4 = wait status
 
     // TODO: Make this better OO code. AVAILABLE_SHIPS should be an array
     //       of objects rather than than two parallel arrays. Or, a better
@@ -104,10 +109,10 @@ function startGame() {
 
   // Updates the sidebar display with the current statistics
   Stats.prototype.updateStatsSidebar = function () {
-    var elWinPercent = document.getElementById('stats-wins')
-    var elAccuracy = document.getElementById('stats-accuracy')
-    elWinPercent.innerHTML = this.gamesWon + ' of ' + this.gamesPlayed
-    elAccuracy.innerHTML = Math.round((100 * this.totalHits) / this.totalShots || 0) + '%'
+    // var elWinPercent = document.getElementById('stats-wins')
+    // var elAccuracy = document.getElementById('stats-accuracy')
+    // elWinPercent.innerHTML = this.gamesWon + ' of ' + this.gamesPlayed
+    // elAccuracy.innerHTML = Math.round((100 * this.totalHits) / this.totalShots || 0) + '%'
   }
 
   // Reset all game vanity statistics to zero. Doesn't reset your uuid.
@@ -182,15 +187,17 @@ function startGame() {
 
   // Checks if the game is won, and if it is, re-initializes the game
   Game.prototype.checkIfWon = function () {
-    if (this.computerFleet.allShipsSunk()) {
+    if (this.computerGrid.allHit()) {
       alert('Congratulations, you win!')
       Game.gameOver = true
       Game.stats.wonGame()
       Game.stats.syncStats()
       Game.stats.updateStatsSidebar()
       this.showRestartSidebar()
-    } else if (this.humanFleet.allShipsSunk()) {
-      alert('Yarr! The computer sank all your ships. Try again.')
+    } else if (this.humanGrid.allHit()) {
+      alert('Yarr! The opponent sank all your ships. Try again. 通知对方中')
+      const [x, y] = this.humanGrid.findOneMiss()
+      wsHandlerHub.saveShootCoord(x, y)
       Game.gameOver = true
       Game.stats.lostGame()
       Game.stats.syncStats()
@@ -201,7 +208,7 @@ function startGame() {
 
   // Shoots at the target player on the grid.
   // Returns {int} Constants.TYPE: What the shot uncovered
-  Game.prototype.shoot = function (x, y, targetPlayer) {
+  Game.prototype.shoot = function (x, y, targetPlayer, hit) {
     var targetGrid
     var targetFleet
     if (targetPlayer === CONST.HUMAN_PLAYER) {
@@ -219,18 +226,24 @@ function startGame() {
       return null
     } else if (targetGrid.isMiss(x, y)) {
       return null
-    } else if (targetGrid.isUndamagedShip(x, y)) {
-      // update the board/grid
-      targetGrid.updateCell(x, y, 'hit', targetPlayer)
-      // IMPORTANT: This function needs to be called _after_ updating the cell to a 'hit',
-      // because it overrides the CSS class to 'sunk' if we find that the ship was sunk
-      targetFleet.findShipByCoords(x, y).incrementDamage() // increase the damage
-      this.checkIfWon()
-      return CONST.TYPE_HIT
+    } else if (targetGrid.isWait(x, y)) {
+      if (hit) {
+        // update the board/grid
+        targetGrid.updateCell(x, y, 'hit', targetPlayer)
+        // IMPORTANT: This function needs to be called _after_ updating the cell to a 'hit',
+        // because it overrides the CSS class to 'sunk' if we find that the ship was sunk
+        // targetFleet.findShipByCoords(x, y).incrementDamage() // increase the damage
+        this.checkIfWon()
+        return CONST.TYPE_HIT
+      } else {
+        targetGrid.updateCell(x, y, 'miss', targetPlayer)
+        this.checkIfWon()
+        return CONST.TYPE_MISS
+      }
     } else {
-      targetGrid.updateCell(x, y, 'miss', targetPlayer)
+      targetGrid.updateCell(x, y, 'wait', targetPlayer)
       this.checkIfWon()
-      return CONST.TYPE_MISS
+      return CONST.CSS_TYPE_WAIT
     }
   }
 
@@ -241,8 +254,9 @@ function startGame() {
     var x = parseInt(e.target.getAttribute('data-x'), 10)
     var y = parseInt(e.target.getAttribute('data-y'), 10)
     var result = null
-    if (self.readyToPlay) {
+    if (self.readyToPlay && wsHandlerHub.actionSide === wsHandlerHub.role) {
       result = self.shoot(x, y, CONST.COMPUTER_PLAYER)
+      wsHandlerHub.saveShootCoord(x, y)
 
       // Remove the tutorial arrow
       if (gameTutorial.showTutorial) {
@@ -257,7 +271,8 @@ function startGame() {
       }
       // The AI shoots iff the player clicks on a cell that he/she hasn't
       // already clicked on yet
-      self.robot.shoot()
+      // shoot
+      // self.robot.shoot()
     } else {
       Game.gameOver = false
     }
@@ -265,7 +280,6 @@ function startGame() {
 
   // Creates click event listeners on each of the ship names in the roster
   Game.prototype.rosterListener = function (e) {
-    console.log('rosterListener')
     var self = e.target.self
     // Remove all classes of 'placing' from the fleet roster first
     var roster = document.querySelectorAll('.fleet-roster li')
@@ -308,12 +322,15 @@ function startGame() {
         }
 
         self.placingOnGrid = false
+
         if (self.areAllShipsPlaced()) {
           var el = document.getElementById('rotate-button')
           el.addEventListener(
             transitionEndEventName(),
             function () {
               el.setAttribute('class', 'hidden')
+              document.getElementById('place-randomly').setAttribute('class', 'hidden')
+
               if (gameTutorial.showTutorial) {
                 document.getElementById('start-game').setAttribute('class', 'highlight')
               } else {
@@ -333,13 +350,11 @@ function startGame() {
   // is allowed to place a ship there
   Game.prototype.placementMouseover = function (e) {
     var self = e.target.self
-    console.log('placementMouseover', self)
     if (self.placingOnGrid) {
       var x = parseInt(e.target.getAttribute('data-x'), 10)
       var y = parseInt(e.target.getAttribute('data-y'), 10)
       var classes
       var fleetRoster = self.humanFleet.fleetRoster
-      console.log('placementMouseover')
 
       for (var i = 0; i < fleetRoster.length; i++) {
         var shipType = fleetRoster[i].type
@@ -393,9 +408,21 @@ function startGame() {
     }
   }
 
+  Game.prototype.readyGame = function (e) {
+    var self = e.target.self
+    var sgel = document.getElementById('start-game')
+    sgel.setAttribute('class', 'hidden')
+
+    var wsel = document.getElementById('wait-start')
+    wsel.removeAttribute('class')
+
+    wsHandlerHub.initBoard(self.humanFleet.fleetU64)
+  }
+
   // Click handler for the Start Game button
   Game.prototype.startGame = function (e) {
-    var self = e.target.self
+    var self = this
+
     var el = document.getElementById('roster-sidebar')
     var fn = function () {
       el.setAttribute('class', 'hidden')
@@ -413,7 +440,7 @@ function startGame() {
 
   // Click handler for Restart Game button
   Game.prototype.restartGame = function (e) {
-    e.target.removeEventListener(e.type, arguments.callee)
+    e.target.removeEventListener(e.type, arguments.call)
     var self = e.target.self
     document.getElementById('restart-sidebar').setAttribute('class', 'hidden')
     self.resetFogOfWar()
@@ -422,11 +449,20 @@ function startGame() {
 
   // Debugging function used to place all ships and just start
   Game.prototype.placeRandomly = function (e) {
-    e.target.removeEventListener(e.type, arguments.callee)
+    e.target.removeEventListener(e.type, arguments.call)
     e.target.self.humanFleet.placeShipsRandomly()
-    e.target.self.readyToPlay = true
-    document.getElementById('roster-sidebar').setAttribute('class', 'hidden')
-    this.setAttribute('class', 'hidden')
+    // e.target.self.readyToPlay = true
+    document.getElementById('place-randomly').setAttribute('class', 'hidden')
+    document.getElementById('rotate-button').setAttribute('class', 'hidden')
+    document.getElementById('patrolboat').setAttribute('class', 'hidden')
+    document.getElementById('destroyer').setAttribute('class', 'hidden')
+    document.getElementById('battleship').setAttribute('class', 'hidden')
+    document.getElementById('carrier').setAttribute('class', 'hidden')
+    document.getElementById('carrier').setAttribute('class', 'hidden')
+    document.getElementById('start-game').setAttribute('class', 'highlight')
+
+    document.getElementById('roster-sidebar').setAttribute('class', '')
+    // this.setAttribute('class', 'hidden')
   }
 
   // Ends placing the current ship
@@ -515,7 +551,6 @@ function startGame() {
   // Generates the HTML divs for the grid for both players
   Game.prototype.createGrid = function () {
     var gridDiv = document.querySelectorAll('.grid1')
-    console.log('createGrid', gridDiv)
 
     for (var grid = 0; grid < gridDiv.length; grid++) {
       gridDiv[grid].removeChild(gridDiv[grid].querySelector('.no-js')) // Removes the no-js warning
@@ -582,7 +617,7 @@ function startGame() {
     rotateButton.addEventListener('click', this.toggleRotation, false)
     var startButton = document.getElementById('start-game')
     startButton.self = this
-    startButton.addEventListener('click', this.startGame, false)
+    startButton.addEventListener('click', this.readyGame, false)
     var resetButton = document.getElementById('reset-stats')
     resetButton.addEventListener('click', Game.stats.resetStats, false)
     var randomButton = document.getElementById('place-randomly')
@@ -636,6 +671,9 @@ function startGame() {
       case CONST.CSS_TYPE_SUNK:
         this.cells[x][y] = CONST.TYPE_SUNK
         break
+      case CONST.CSS_TYPE_WAIT:
+        this.cells[x][y] = CONST.TYPE_WAIT
+        break
       default:
         this.cells[x][y] = CONST.TYPE_EMPTY
         break
@@ -655,11 +693,48 @@ function startGame() {
   Grid.prototype.isMiss = function (x, y) {
     return this.cells[x][y] === CONST.TYPE_MISS
   }
+
+  Grid.prototype.isWait = function (x, y) {
+    return this.cells[x][y] === CONST.TYPE_WAIT
+  }
+
   // Checks to see if a cell contains a damaged ship,
   // either hit or sunk.
   // Returns boolean
   Grid.prototype.isDamagedShip = function (x, y) {
     return this.cells[x][y] === CONST.TYPE_HIT || this.cells[x][y] === CONST.TYPE_SUNK
+  }
+
+  Grid.prototype.findOneMiss = function () {
+    let coord
+    for (var x = 0; x < this.size; x++) {
+      const row = this.cells[x]
+      for (var y = 0; y < this.size; y++) {
+        if (row[y] === CONST.TYPE_EMPTY) {
+          coord = [x, y]
+          break
+        }
+      }
+    }
+    return coord
+  }
+
+  Grid.prototype.allHit = function () {
+    return this.findAllHit().length === 2 + 3 + 4 + 5
+  }
+
+  Grid.prototype.findAllHit = function () {
+    const hitArr = []
+    for (var x = 0; x < this.size; x++) {
+      const row = this.cells[x]
+      for (var y = 0; y < this.size; y++) {
+        if (row[y] === CONST.TYPE_HIT) {
+          hitArr.push({ x, y })
+        }
+      }
+    }
+
+    return hitArr
   }
 
   // Fleet object
@@ -670,6 +745,7 @@ function startGame() {
     this.playerGrid = playerGrid
     this.player = player
     this.fleetRoster = []
+    this.fleetU64 = []
     this.populate()
   }
   // Populates a fleet
@@ -692,9 +768,15 @@ function startGame() {
         this.fleetRoster[i].create(x, y, direction, false)
         shipCoords = this.fleetRoster[i].getAllShipCells()
 
+        let u64 = new Array(64).fill(0)
         for (var j = 0; j < shipCoords.length; j++) {
+          u64[shipCoords[j].x * 8 + shipCoords[j].y] = 1
           this.playerGrid.updateCell(shipCoords[j].x, shipCoords[j].y, 'ship', this.player)
         }
+
+        const n = new Decimal(`0b${u64.join('')}`).toString()
+        this.fleetU64[shipCoords.length - 2] = n
+
         return true
       }
     }
@@ -726,7 +808,12 @@ function startGame() {
         }
       }
       if (this.player === CONST.HUMAN_PLAYER && Game.usedShips[i] !== CONST.USED) {
+        let u64 = new Array(64).fill(0)
         for (var j = 0; j < shipCoords.length; j++) {
+          u64[shipCoords[j].x * 8 + shipCoords[j].y] = 1
+          const n = new Decimal(`0b${u64.join('')}`).toString()
+          this.fleetU64[shipCoords.length - 2] = n
+
           this.playerGrid.updateCell(shipCoords[j].x, shipCoords[j].y, 'ship', this.player)
           Game.usedShips[i] = CONST.USED
         }
@@ -1040,33 +1127,63 @@ function startGame() {
   ]
   // Scouts the grid based on max probability, and shoots at the cell
   // that has the highest probability of containing a ship
-  AI.prototype.shoot = function () {
-    var maxProbability = 0
-    var maxProbCoords
-    var maxProbs = []
+  AI.prototype.shoot = function (maxProbCoords) {
+    // var maxProbability = 0
+    // var maxProbCoords
+    // var maxProbs = []
 
-    // Add the AI's opening book to the probability grid
-    for (var i = 0; i < AI.OPENINGS.length; i++) {
-      var cell = AI.OPENINGS[i]
-      if (this.probGrid[cell.x][cell.y] !== 0) {
-        this.probGrid[cell.x][cell.y] += cell.weight
-      }
+    // // Add the AI's opening book to the probability grid
+    // for (var i = 0; i < AI.OPENINGS.length; i++) {
+    //   var cell = AI.OPENINGS[i]
+    //   if (this.probGrid[cell.x][cell.y] !== 0) {
+    //     this.probGrid[cell.x][cell.y] += cell.weight
+    //   }
+    // }
+
+    // for (var x = 0; x < Game.size; x++) {
+    //   for (var y = 0; y < Game.size; y++) {
+    //     if (this.probGrid[x][y] > maxProbability) {
+    //       maxProbability = this.probGrid[x][y]
+    //       maxProbs = [{ x: x, y: y }] // Replace the array
+    //     } else if (this.probGrid[x][y] === maxProbability) {
+    //       maxProbs.push({ x: x, y: y })
+    //     }
+    //   }
+    // }
+
+    // maxProbCoords = Math.random() < AI.RANDOMNESS ? maxProbs[Math.floor(Math.random() * maxProbs.length)] : maxProbs[0]
+
+    const self = this.gameObject
+    var targetPlayer = CONST.HUMAN_PLAYER
+    var targetGrid
+    var targetFleet
+    targetGrid = self.humanGrid
+    targetFleet = self.humanFleet
+
+    const x = maxProbCoords.x
+    const y = maxProbCoords.y
+
+    if (self.computerGrid.allHit()) {
+      return
     }
 
-    for (var x = 0; x < Game.size; x++) {
-      for (var y = 0; y < Game.size; y++) {
-        if (this.probGrid[x][y] > maxProbability) {
-          maxProbability = this.probGrid[x][y]
-          maxProbs = [{ x: x, y: y }] // Replace the array
-        } else if (this.probGrid[x][y] === maxProbability) {
-          maxProbs.push({ x: x, y: y })
-        }
-      }
+    if (targetGrid.isUndamagedShip(x, y)) {
+      // update the board/grid
+
+      targetGrid.updateCell(x, y, 'hit', targetPlayer)
+      self.checkIfWon()
+      // IMPORTANT: This function needs to be called _after_ updating the cell to a 'hit',
+      // because it overrides the CSS class to 'sunk' if we find that the ship was sunk
+      // targetFleet.findShipByCoords(x, y).incrementDamage() // increase the damage
+    } else {
+      targetGrid.updateCell(x, y, 'miss', targetPlayer)
+      self.checkIfWon()
     }
 
-    maxProbCoords = Math.random() < AI.RANDOMNESS ? maxProbs[Math.floor(Math.random() * maxProbs.length)] : maxProbs[0]
-
-    var result = this.gameObject.shoot(maxProbCoords.x, maxProbCoords.y, CONST.HUMAN_PLAYER)
+    // if (self.computerGrid.allHit()) {
+    //   targetGrid.updateCell(x, y, 'empty', targetPlayer)
+    // }
+    // var result = this.gameObject.shoot(maxProbCoords.x, maxProbCoords.y, CONST.HUMAN_PLAYER)
 
     // If the game ends, the next lines need to be skipped.
     if (Game.gameOver) {
@@ -1074,29 +1191,29 @@ function startGame() {
       return
     }
 
-    this.virtualGrid.cells[maxProbCoords.x][maxProbCoords.y] = result
+    // this.virtualGrid.cells[maxProbCoords.x][maxProbCoords.y] = result
 
     // If you hit a ship, check to make sure if you've sunk it.
-    if (result === CONST.TYPE_HIT) {
-      var humanShip = this.findHumanShip(maxProbCoords.x, maxProbCoords.y)
-      if (humanShip.isSunk()) {
-        // Remove any ships from the roster that have been sunk
-        var shipTypes = []
-        for (var k = 0; k < this.virtualFleet.fleetRoster.length; k++) {
-          shipTypes.push(this.virtualFleet.fleetRoster[k].type)
-        }
-        var index = shipTypes.indexOf(humanShip.type)
-        this.virtualFleet.fleetRoster.splice(index, 1)
+    // if (result === CONST.TYPE_HIT) {
+    //   var humanShip = this.findHumanShip(maxProbCoords.x, maxProbCoords.y)
+    //   if (humanShip.isSunk()) {
+    //     // Remove any ships from the roster that have been sunk
+    //     var shipTypes = []
+    //     for (var k = 0; k < this.virtualFleet.fleetRoster.length; k++) {
+    //       shipTypes.push(this.virtualFleet.fleetRoster[k].type)
+    //     }
+    //     var index = shipTypes.indexOf(humanShip.type)
+    //     this.virtualFleet.fleetRoster.splice(index, 1)
 
-        // Update the virtual grid with the sunk ship's cells
-        var shipCells = humanShip.getAllShipCells()
-        for (var _i = 0; _i < shipCells.length; _i++) {
-          this.virtualGrid.cells[shipCells[_i].x][shipCells[_i].y] = CONST.TYPE_SUNK
-        }
-      }
-    }
+    //     // Update the virtual grid with the sunk ship's cells
+    //     var shipCells = humanShip.getAllShipCells()
+    //     for (var _i = 0; _i < shipCells.length; _i++) {
+    //       this.virtualGrid.cells[shipCells[_i].x][shipCells[_i].y] = CONST.TYPE_SUNK
+    //     }
+    //   }
+    // }
     // Update probability grid after each shot
-    this.updateProbs()
+    // this.updateProbs()
   }
   // Update the probability grid
   AI.prototype.updateProbs = function () {
@@ -1211,6 +1328,7 @@ function startGame() {
 
   // Start the game
   var mainGame = new Game(8)
+  return mainGame
 }
 
 // Browser compatability workaround for transition end event names.
@@ -1334,3 +1452,17 @@ export { startGame }
 //   var classes = ['grid-cell', 'grid-cell-' + x + '-' + y, 'grid-' + type]
 //   document.querySelector('.' + player + ' .grid-cell-' + x + '-' + y).setAttribute('class', classes.join(' '))
 // }
+
+const intervalAsync = (fn, ms) => {
+  return new Promise(() => {
+    const asyncFetch = () => {
+      fn().then((res) => {
+        timeout = setTimeout(() => {
+          clearTimeout(timeout)
+          asyncFetch()
+        }, ms)
+      })
+    }
+    asyncFetch()
+  })
+}

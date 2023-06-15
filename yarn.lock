@@ -445,11 +445,6 @@ big-integer@^1.6.44:
   resolved "https://registry.npmmirror.com/big-integer/-/big-integer-1.6.51.tgz#0df92a5d9880560d3ff2d5fd20245c889d130686"
   integrity sha512-GPEid2Y9QU1Exl1rpO9B2IPJGHPSupF5GnVIP0blYvNOMer2bTvSWs1jGOUg04hTmu67nmLsQ9TBo1puaotBHg==
 
-bignumber.js@^9.1.1:
-  version "9.1.1"
-  resolved "https://registry.npmmirror.com/bignumber.js/-/bignumber.js-9.1.1.tgz#c4df7dc496bd849d4c9464344c1aa74228b4dac6"
-  integrity sha512-pHm4LsMJ6lzgNGVfZHjMoO8sdoRhOzOH4MLmY65Jg70bpxCKu5iOHNJyfF6OyvYw7t8Fpf35RuzUyqnQsj8Vig==
-
 binary-extensions@^2.0.0:
   version "2.2.0"
   resolved "https://registry.npmmirror.com/binary-extensions/-/binary-extensions-2.2.0.tgz#75f502eeaf9ffde42fc98829645be4ea76bd9e2d"
@@ -611,6 +606,11 @@ debug@^4.1.1, debug@^4.3.2, debug@^4.3.4:
   integrity sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==
   dependencies:
     ms "2.1.2"
+
+decimal.js@^10.4.3:
+  version "10.4.3"
+  resolved "https://registry.npmmirror.com/decimal.js/-/decimal.js-10.4.3.tgz#1044092884d245d1b7f65725fa4ad4c6f781cc23"
+  integrity sha512-VBBaLc1MgL5XpzgIP7ny5Z6Nx3UrRkIViUkPUdtl9aya5amy3De1gsUUSB1g3+3sExYNjCAsAznmukyxCb1GRA==
 
 deep-equal@^2.0.5:
   version "2.2.1"
@@ -1592,10 +1592,10 @@ jiti@^1.18.2:
   resolved "https://registry.npmmirror.com/jiti/-/jiti-1.18.2.tgz#80c3ef3d486ebf2450d9335122b32d121f2a83cd"
   integrity sha512-QAdOptna2NYiSSpv0O/BwoHBSmz4YhpzJHyi+fnMRTXFjp7B8i/YG5Z8IfusxB1ufjcD2Sre1F3R+nX3fvy7gg==
 
-js-snarkvm@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.npmmirror.com/js-snarkvm/-/js-snarkvm-0.3.0.tgz#45e77f5d9db19cfb9fcca896c749ce9a0570142d"
-  integrity sha512-8oHLbscWQ2VVQfcZxOq7qHcjXgRZJINRDkip4g8RpeQhOkdnt76xV5LAHzWeA1+6wVmr2Sx178JJneVkvPs5cg==
+js-snarkvm@^0.7.1:
+  version "0.7.1"
+  resolved "https://registry.npmmirror.com/js-snarkvm/-/js-snarkvm-0.7.1.tgz#5ed3fea6257e43d10ade8e8dd4a4f217b92417d0"
+  integrity sha512-4KBGnRuGHN26x5bMrXSUQv+++LYU6p45ePblW2Ax9tI5UIthVIYHhT2fyIpgpfkEt4At4MiYJO6Z9xrpj/k80A==
 
 "js-tokens@^3.0.0 || ^4.0.0":
   version "4.0.0"

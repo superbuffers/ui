@@ -106,6 +106,7 @@ body {
 }
 #roster-sidebar,
 #stats-sidebar,
+#data-feed,
 #restart-sidebar {
   width: 187px;
   padding: 20px;
@@ -122,11 +123,13 @@ body {
 #restart-sidebar {
   left: -200px;
 }
-#stats-sidebar {
+#stats-sidebar,
+#data-feed {
   right: -200px;
 }
 #roster-sidebar h2,
 #stats-sidebar h2,
+#data-feed h2,
 #restart-sidebar h2 {
   margin: 0 0 1em 0;
   text-align: center;
