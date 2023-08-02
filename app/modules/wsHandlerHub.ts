@@ -122,7 +122,8 @@ WSHub.prototype.handleHub = function (params: any) {
 WSHub.prototype.setRole = function ([operation, data]: [string, any]) {
   this.role = operation
   this.opponent = data
-  this.mainGame = startGame()
+
+  this.mainGame = startGame(wsHandlerHub)
 }
 
 WSHub.prototype.initBoard = async function (u64: number[]) {

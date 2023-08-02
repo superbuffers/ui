@@ -89,7 +89,6 @@ class WS {
 
   send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void {
     if (!this.socket) return
-    console.log('this.socket', this.socket)
 
     if (this.socket.readyState === this.socket.OPEN) {
       this.socket.send(data)

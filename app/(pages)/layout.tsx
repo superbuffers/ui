@@ -2,6 +2,7 @@ import 'normalize.css'
 import '../assets/css/globals.css'
 import { Navbar } from '../components/Navbar'
 import { Footer } from '../components/Footer'
+import { Toaster } from 'react-hot-toast'
 
 import type { Metadata } from 'next'
 
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className='flex-1'>{children}</main>
           <Footer />
         </div>
+        <Toaster />
       </body>
     </html>
   )

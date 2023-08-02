@@ -1,7 +1,6 @@
-import wsHandlerHub from './wsHandlerHub'
 import Decimal from 'decimal.js'
 
-function startGame() {
+function startGame(gameHandlerHub) {
   // Global Constants
   const DEBUG_MODE = false
   const CONST = {
@@ -175,11 +174,12 @@ function startGame() {
 
   // Game manager object
   // Constructor
-  function Game(size) {
+  function Game(size, gameHandlerHub) {
     Game.size = size
     this.shotsTaken = 0
     this.createGrid()
     this.init()
+    this.gameHandlerHub = gameHandlerHub
   }
 
   Game.size = 8 // Default grid size is 10x10
@@ -197,7 +197,7 @@ function startGame() {
     } else if (this.humanGrid.allHit()) {
       alert('Yarr! The opponent sank all your ships. Try again. 通知对方中')
       const [x, y] = this.humanGrid.findOneMiss()
-      wsHandlerHub.saveShootCoord(x, y)
+      this.gameHandlerHub.saveShootCoord(x, y)
       Game.gameOver = true
       Game.stats.lostGame()
       Game.stats.syncStats()
@@ -254,9 +254,9 @@ function startGame() {
     var x = parseInt(e.target.getAttribute('data-x'), 10)
     var y = parseInt(e.target.getAttribute('data-y'), 10)
     var result = null
-    if (self.readyToPlay && wsHandlerHub.actionSide === wsHandlerHub.role) {
+    if (self.readyToPlay && self.gameHandlerHub.actionSide === self.gameHandlerHub.role) {
       result = self.shoot(x, y, CONST.COMPUTER_PLAYER)
-      wsHandlerHub.saveShootCoord(x, y)
+      self.gameHandlerHub.saveShootCoord(x, y)
 
       // Remove the tutorial arrow
       if (gameTutorial.showTutorial) {
@@ -415,8 +415,7 @@ function startGame() {
 
     var wsel = document.getElementById('wait-start')
     wsel.removeAttribute('class')
-
-    wsHandlerHub.initBoard(self.humanFleet.fleetU64)
+    self.gameHandlerHub.initBoard(self.humanFleet.fleetU64)
   }
 
   // Click handler for the Start Game button
@@ -1327,7 +1326,7 @@ function startGame() {
   var gameTutorial = new Tutorial()
 
   // Start the game
-  var mainGame = new Game(8)
+  var mainGame = new Game(8, gameHandlerHub)
   return mainGame
 }
 
