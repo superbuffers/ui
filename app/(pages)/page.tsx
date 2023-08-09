@@ -12,11 +12,10 @@ export default function Home() {
             </p>
             <a
               className='inline-flex items-center rounded-[6px] bg-gradient-to-br from-[#382AD2] to-[#4274EE] px-[30px] py-5 text-white shadow-[0_2px_8px_0_rgba(64,102,232,0.5)] transition-all  duration-300 hover:shadow-[0_3px_9px_0_rgba(64,102,232)]'
-              href='https://github.com/superbuffers'
+              href='https://medium.com/@superbuffers/superbuffers-a-middleware-to-speed-up-web3-applications-99899933def8'
               target='_black'
             >
-              <Image className='mr-[10px]' width={24} height={24} src='/home/github.svg' alt='github' />
-              <span>Github</span>
+              <span>Learn More</span>
             </a>
           </div>
           <div className='relative col-start-13'>

@@ -1,5 +1,19 @@
-import Link from 'next/link'
-import { LINKS } from './Navbar'
+import Image from 'next/image'
+
+const LINKS = [
+  {
+    icon: '/home/github.svg',
+    href: 'https://github.com/superbuffers'
+  },
+  {
+    icon: '/home/twitter.svg',
+    href: 'https://twitter.com/superbuffers'
+  },
+  {
+    icon: '/home/medium.svg',
+    href: 'https://superbuffers.medium.com/'
+  }
+]
 
 const Footer = () => {
   return (
@@ -21,9 +35,9 @@ const Footer = () => {
           </p>
           <div className='col-span-4 col-start-11 flex items-end justify-end space-x-[30px]'>
             {LINKS.map((item, index) => (
-              <Link href={item.href} key={index}>
-                {item.title}
-              </Link>
+              <a key={index} href={item.href} target='_black'>
+                <Image className='mr-[10px]' width={24} height={24} src={item.icon} alt='' />
+              </a>
             ))}
           </div>
         </div>
